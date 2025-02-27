@@ -4,10 +4,9 @@
 #include <tf/tf.h>
 #include <tf/transform_broadcaster.h>
 #include <geometry_msgs/Twist.h>
-#include "GyverMotor.h"
 
 ros::NodeHandle nh;
-geometry_msgs::TransformStamped t;
+
 tf::TransformBroadcaster broadcaster;
 
 char base_link[]="/base_link";
@@ -25,24 +24,13 @@ unsigned long previousMillis;
 volatile long encoderR_Pos = 0;
 volatile long encoderL_Pos = 0;
 
-GMotor motorR(DRIVER2WIRE, 8, 9, HIGH);
-GMotor motorL(DRIVER2WIRE, 4, 10, HIGH);
-
 double Pk = 50, Ik = 5, Dk = 0.1;
 
-double Pk1 = Pk;
-double Ik1 = Ik;
-double Dk1 = Dk;
+double Setpoint1, Input1, Output1;
+PID PID1(&Input1, &Output1, &Setpoint1, Pk, Ik, Dk, DIRECT);
 
-double Setpoint1, Input1, Output1, Output1a;
-PID PID1(&Input1, &Output1, &Setpoint1, Pk1, Ik1, Dk1, DIRECT);
-
-double Pk2 = Pk;
-double Ik2 = Ik;
-double Dk2 = Dk;
-
-double Setpoint2, Input2, Output2, Output2a;
-PID PID2(&Input2, &Output2, &Setpoint2, Pk2, Ik2, Dk2, DIRECT);
+double Setpoint2, Input2, Output2;
+PID PID2(&Input2, &Output2, &Setpoint2, Pk, Ik, Dk, DIRECT);
 
 float demand1;
 float demand2;
@@ -70,9 +58,13 @@ void cmdVelCallback(const geometry_msgs::Twist &cmd)
 ros::Subscriber<geometry_msgs::Twist> sub("cmd_vel", cmdVelCallback);
 
 void setup() {
-  // put your setup code here, to run once:
-  motorR.setMode(AUTO);
-  motorL.setMode(AUTO);
+  geometry_msgs::TransformStamped t;
+  //motorR.setMode(AUTO);
+  //motorL.setMode(AUTO);
+  pinMode(8, OUTPUT);
+  pinMode(9, OUTPUT);
+  pinMode(4, OUTPUT);
+  pinMode(10, OUTPUT);
   
   pinMode(encoderRPinA, INPUT_PULLUP);
   pinMode(encoderRPinB, INPUT_PULLUP);
@@ -91,46 +83,75 @@ void setup() {
   PID2.SetSampleTime(10);
   nh.initNode();
   nh.subscribe(sub);
-  Serial.begin(57600);
 }
 
 void loop()
 {
     nh.spinOnce();
 
-    encoderRDiff = encoderR_Pos - encoderRPrev;
-    encoderLDiff = encoderL_Pos - encoderLPrev;
+    currentMillis = millis();
+    if(currentMillis - previousMillis >= 10){
+      previousMillis = currentMillis;
+      encoderRDiff = encoderR_Pos - encoderRPrev;
+      encoderLDiff = encoderL_Pos - encoderLPrev;
 
-    encoderRPrev = encoderR_Pos;
-    encoderLPrev = encoderL_Pos;
+      encoderRPrev = encoderR_Pos;
+      encoderLPrev = encoderL_Pos;
 
-    Setpoint1 = demand1 * 5;
-    Input1 = encoderRDiff;
-    PID1.Compute();
+      Setpoint1 = demand1 * 5;
+      Input1 = encoderRDiff;
+      PID1.Compute();
 
-    Setpoint2 = demand2 * 5;
-    Input2 = encoderLDiff;
-    PID2.Compute();
+      Setpoint2 = demand2 * 5;
+      Input2 = encoderLDiff;
+      PID2.Compute();
+      
+      setMotorSpeed(1, Output1);  
+      setMotorSpeed(2, Output2);
+    }
 
-    motorR.setSpeed(Output1 > 0 ? -abs(Output1) : abs(Output1));
-    motorL.setSpeed(Output2 > 0 ? -abs(Output2) : abs(Output2));
-
-    //delay(10);
 }
+
+void setMotorSpeed(int motor, int speed) {
+  if (motor == 1) {  // Для правого мотора
+    if (speed > 0) {
+      analogWrite(8, speed);    // Подаем сигнал на один пин
+      analogWrite(9, 0);        // Отключаем противоположный пин
+    } else if (speed < 0) {
+      analogWrite(8, 0);
+      analogWrite(9, -speed);   // Подаем сигнал на противоположный пин
+    } else {
+      analogWrite(8, 0);
+      analogWrite(9, 0);         // Останавливаем мотор
+    }
+  } else if (motor == 2) {  // Для левого мотора
+    if (speed > 0) {
+      analogWrite(4, speed);
+      analogWrite(10, 0);
+    } else if (speed < 0) {
+      analogWrite(4, 0);
+      analogWrite(10, -speed);
+    } else {
+      analogWrite(4, 0);
+      analogWrite(10, 0);
+    }
+  }
+}
+
 
 void doEncoderRPinA(){
   if (digitalRead(encoderRPinA) == digitalRead(encoderRPinB)) {
-    encoderR_Pos--;  // В одну сторону
+    encoderR_Pos--;  
   } else {
-    encoderR_Pos++;  // В другую сторону
+    encoderR_Pos++;  
   }                                  
 }
 
 
 void doEncoderLPinA(){
      if (digitalRead(encoderLPinA) == digitalRead(encoderLPinB)) {
-    encoderL_Pos++;  // В одну сторону
+    encoderL_Pos++;  
   } else {
-    encoderL_Pos--;  // В другую сторону
+    encoderL_Pos--;  
   }
    }
