@@ -3,11 +3,12 @@
 #include <ros/time.h> 
 #include <tf/tf.h>
 #include <tf/transform_broadcaster.h>
+#include <geometry_msgs/Twist.h>
 #include "GyverMotor.h"
 
 ros::NodeHandle nh;
 geometry_msgs::TransformStamped t;
-tf:TransformBroadcaster broadcaster;
+tf::TransformBroadcaster broadcaster;
 
 char base_link[]="/base_link";
 char odom[]="/odom";
@@ -27,7 +28,7 @@ volatile long encoderL_Pos = 0;
 GMotor motorR(DRIVER2WIRE, 8, 9, HIGH);
 GMotor motorL(DRIVER2WIRE, 4, 10, HIGH);
 
-double Pk = 50, Ik = 10, Dk = 0.5;
+double Pk = 50, Ik = 5, Dk = 0.1;
 
 double Pk1 = Pk;
 double Ik1 = Ik;
@@ -114,7 +115,7 @@ void loop()
     motorR.setSpeed(Output1 > 0 ? -abs(Output1) : abs(Output1));
     motorL.setSpeed(Output2 > 0 ? -abs(Output2) : abs(Output2));
 
-    delay(10);
+    //delay(10);
 }
 
 void doEncoderRPinA(){
