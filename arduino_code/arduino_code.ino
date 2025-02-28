@@ -52,6 +52,8 @@ float encoderLPrev;
 float demandx;
 float demandz;
 
+double speed_act_left;
+double speed_act_right;
 // ROS callback
 void cmdVelCallback(const geometry_msgs::Twist &cmd)
 {
@@ -61,11 +63,11 @@ void cmdVelCallback(const geometry_msgs::Twist &cmd)
 }
 
 ros::Subscriber<geometry_msgs::Twist> sub("cmd_vel", cmdVelCallback);
-//geometry_msgs::Vector3Stamped speed_msg;
-//ros::Publisher speed_pub("speed", &speed_msg);
+geometry_msgs::Vector3Stamped speed_msg;
+ros::Publisher speed_pub("speed", &speed_msg);
 
-geometry_msgs::Vector3Stamped motor_output_msg;
-ros::Publisher motor_output_pub("motor_output", &motor_output_msg);
+//geometry_msgs::Vector3Stamped motor_output_msg;
+//ros::Publisher motor_output_pub("motor_output", &motor_output_msg);
 void setup() {
   motorR.setMode(AUTO);
   motorL.setMode(AUTO);
@@ -86,7 +88,7 @@ void setup() {
   PID2.SetOutputLimits(-250, 250);
   PID2.SetSampleTime(10);
   nh.initNode();
-  nh.advertise(motor_output_pub);
+  //nh.advertise(motor_output_pub);
   nh.subscribe(sub);
 }
 
@@ -96,6 +98,7 @@ void loop()
     currentMillis = millis();
     if(currentMillis - previousMillis >= 10){
       previousMillis = currentMillis;
+
       encoderRDiff = encoderR_Pos - encoderRPrev;
       encoderLDiff = encoderL_Pos - encoderLPrev;
 
@@ -104,6 +107,10 @@ void loop()
 
       demand2 = demandx - (demandz * 0.131);
       demand1 = demandx + (demandz * 0.131);
+
+
+      speed_act_left = encoderLDiff / 10;
+      speed_act_right = encoderRDiff / 10;
 
       if(demand1>0 && demand2>0){
         Pk1 = 50.0, Ik1 = 5, Dk1 = 0.05;
@@ -133,11 +140,13 @@ void loop()
       motorR.setSpeed(-Output1);
       motorL.setSpeed(-Output2);
 
+      publishSpeed(10);
+      /*
       motor_output_msg.header.stamp = nh.now();
       motor_output_msg.vector.x = Output1; // Выход PID для правого мотора
       motor_output_msg.vector.y = Output2; // Выход PID для левого мотора
-      motor_output_pub.publish(&motor_output_msg);
-    }
+      motor_output_pub.publish(&motor_output_msg);  
+    */ }
 
 }
 
@@ -168,6 +177,15 @@ void setMotorSpeed(int motor, int speed) {
   }
 }*/
 
+void publishSpeed(double time) {
+  speed_msg.header.stamp = nh.now();      //timestamp for odometry data
+  speed_msg.vector.x = speed_act_left;    //left wheel speed (in m/s)
+  speed_msg.vector.y = speed_act_right;   //right wheel speed (in m/s)
+  speed_msg.vector.z = time/1000;         //looptime, should be the same as specified in LOOPTIME (in s)
+  speed_pub.publish(&speed_msg);
+  nh.spinOnce();
+  nh.loginfo("Publishing odometry");
+}
 
 void doEncoderRPinA(){
   if (digitalRead(encoderRPinA) == HIGH){
