@@ -63,6 +63,7 @@ void cmdVelCallback(const geometry_msgs::Twist &cmd)
 }
 
 ros::Subscriber<geometry_msgs::Twist> sub("cmd_vel", cmdVelCallback);
+
 geometry_msgs::Vector3Stamped speed_msg;
 ros::Publisher speed_pub("speed", &speed_msg);
 
@@ -88,6 +89,7 @@ void setup() {
   PID2.SetOutputLimits(-250, 250);
   PID2.SetSampleTime(10);
   nh.initNode();
+  nh.advertise(speed_pub);
   //nh.advertise(motor_output_pub);
   nh.subscribe(sub);
 }
