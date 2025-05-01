@@ -1,4 +1,4 @@
-# ros_kinect_autopilot
+# <a href="https://www.youtube.com/watch?v=lSuZmr3-UVs&ab_channel=FreeArtist">ros_kinect_autopilot</a>
 The next generation of <a href="https://github.com/Rozumniak/4wd_robot">4wd_robot_v1</a>
 <br>The system is based on Raspberry pi 4, Arduino Mega, Kinect for Xbox 360, MPU6050 inertial unit, and motors with encoders for the odometry.
 ![13](https://github.com/user-attachments/assets/0ab86d0a-dff7-4018-9218-5e4a56a63145)
