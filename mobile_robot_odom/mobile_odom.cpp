@@ -35,58 +35,9 @@ dy = dist*sin(th);
 x += dx;
 y += dy;
 th += dth;
-/*
-if(qe1*qe2 <0){ //TURNS
-  dth = (qe1-qe2)/2; //average
-  dth= dth/.1464945; //convert to radians of rotation .14605m is 11.5in/2 (half of wheel base)
-  th += dth;
- }
- else if(((qe1-qe2)<0.000743) && ((qe1-qe2)>-0.000743))  // STRAIGHTS 
- {
-  dist = (qe1 +qe2)/2;
-  dx = dist*cos(th);
-  dy = dist*sin(th);
-  x += dx;
-  y += dy;
- }
- else{  // CURVES
-  if(qe2>qe1){
-    vartheta = (qe2-qe1)/.2921;
-    rcurv = (qe1+qe2)/(2*vartheta);
-    dyp = rcurv*cos(vartheta) - rcurv;
-    dxp = rcurv*sin(vartheta);
-    dx= (dxp*cos(th)) - (dyp*sin(th));
-    dy= (dxp*sin(th)) + (dyp*cos(th));
-    dth=-vartheta;   
-  }
-  else{
-    vartheta = (qe1-qe2)/.2921;
-    rcurv = (qe1+qe2)/(2*vartheta);
-    dyp = rcurv - rcurv*cos(vartheta);
-    dxp = rcurv*sin(vartheta);
-    dx= (dxp*cos(th)) - (dyp*sin(th));
-    dy= (dxp*sin(th)) + (dyp*cos(th));
-    dth= vartheta;
-  }
-  x+=dx;
-  y+=dy;
-  th+=dth;
- }
- */
+
  //we need a quaternion to describe rotation in 3d
  geometry_msgs::Quaternion odom_quat =tf::createQuaternionMsgFromYaw(th);
-/* 
- geometry_msgs::TransformStamped odom_trans; //publish transform using TF 
- odom_trans.header.stamp = ros::Time::now();
- odom_trans.header.frame_id = "odom";
- odom_trans.child_frame_id = "base_link";
- 
- odom_trans.transform.translation.x = x;
- odom_trans.transform.translation.y = y;
- odom_trans.transform.translation.z = 0.0;
- odom_trans.transform.rotation = odom_quat;
- 
- odom_broadcaster.sendTransform(odom_trans);  //send transform */
  
  dt =(current_time-last_time).toSec(); //calc velocities
  vx = dist/dt; //v is in base_link frame
